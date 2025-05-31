@@ -1,140 +1,109 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect } from 'react'
 import * as d3 from 'd3';
 import Box from '@mui/material/Box';
 
 import useAppStore from './store';
+import { Isotope } from './Element';
+
+interface GroupedIsotopes {
+  total: number;
+  isotopes: Isotope[];
+}
+
+interface InnerArcDatumData extends Isotope {
+  parent: d3.PieArcDatum<[string, GroupedIsotopes]>;
+}
 
 const Plot: React.FC = () => {
-    const svgRef = useRef<SVGSVGElement>(null);
+    const ref = useRef<SVGSVGElement>(null);
     const { selected } = useAppStore();
-    const width = 600;
-    const height = 600;
-    const radius = Math.min(width, height) / 2;
 
     useEffect(() => {
-        if (!selected || !svgRef.current) return;
+        if (!selected || !ref.current) return;
 
-        // Clear previous chart
-        d3.select(svgRef.current).selectAll("*").remove();
+        const width = 400;
+        const height = 400;
+        const outerRadius = Math.min(width, height) / 2 - 10;
+        const innerRadius = outerRadius * 0.7;
 
-        // 1. Group isotopes by spin (unsorted)
-        const spinGroups = d3.rollups(
-            selected.isotopes.filter(iso => iso.isotopic_composition > 0 && iso.spin?.label),
-            v => ({
-                total: d3.sum(v, d => d.isotopic_composition),
-                isotopes: v.sort((a, b) => a.mass_number - b.mass_number) // Sort isotopes by mass within group
-            }),
-            d => d.spin.label
-        );
+        d3.select(ref.current).selectAll('*').remove();
 
-        // 2. Sort spin groups by descending abundance (for outer ring)
-        spinGroups.sort((a, b) => b[1].total - a[1].total);
+        const svg = d3.select(ref.current)
+          .attr('width', width)
+          .attr('height', height)
+          .append('g')
+          .attr('transform', `translate(${width / 2},${height / 2})`);
 
-        console.log(spinGroups);
+        const validIsotopes = selected.isotopes.filter((iso: Isotope) => iso.isotopic_composition > 0);
 
-        // 3. Create flattened isotope array IN SPIN GROUP ORDER
-        const orderedIsotopes = spinGroups.flatMap(
-            ([spinLabel, group]) => group.isotopes
-        );
+        const spinGroups = Array.from(d3.group(validIsotopes, (d: Isotope) => d.spin.label))
+          .sort((a: [string, Isotope[]], b: [string, Isotope[]]) => {
+              const totalA = d3.sum(a[1], (d: Isotope) => d.isotopic_composition);
+              const totalB = d3.sum(b[1], (d: Isotope) => d.isotopic_composition);
+              return totalB - totalA;
+          })
+          .map((([spinLabel, group]: [string, Isotope[]]) => ([
+            spinLabel, {
+              total: d3.sum(group, (d: Isotope) => d.isotopic_composition),
+              isotopes: group.sort((a: Isotope, b: Isotope) => a.mass_number - b.mass_number)
+            }
+          ])));
 
-        console.log(orderedIsotopes);
+        const spinPie = d3.pie<[string, GroupedIsotopes]>()
+          .value((d: [string, GroupedIsotopes]) => d[1].total);
 
-        const spinPie = d3.pie<typeof spinGroups[0]>()
-            .value(d => d[1].total)
-            .sort(null);
+        const isotopePie = d3.pie<InnerArcDatumData>()
+          .value((d: InnerArcDatumData) => d.isotopic_composition);
 
-        const isotopePie = d3.pie<typeof validIsotopes[0]>()
-            .value(d => d.isotopic_composition)
-            .sort(null);
+        const outerArc = d3.arc<d3.PieArcDatum<[string, GroupedIsotopes]>>()
+          .innerRadius(innerRadius * 1.1)
+          .outerRadius(outerRadius * 1.1);
 
-        const spinArcs = spinPie(spinGroups);
-        const isotopeArcs = isotopePie(orderedIsotopes);
-
-        // 4. Draw the chart
-        const svg = d3.select(svgRef.current);
-        const chartGroup = svg.append("g")
-                              .attr("transform", `translate(${width/2},${height/2})`);
-
-        // Color scales
-        const isotopeColor = d3.scaleOrdinal<string>()
-            .domain(orderedIsotopes.map(iso => iso.nucleus))
-            .range(d3.schemeDark2);
+        const innerArc = d3.arc<d3.PieArcDatum<InnerArcDatumData>>()
+          .innerRadius(innerRadius)
+          .outerRadius(innerRadius * 1.05);
 
         const spinColor = d3.scaleOrdinal<string>()
-            .domain(Array.from(spinGroups.keys()))
-            .range(d3.schemePaired);
+          .domain(spinGroups.map(([label]) => label as string))
+          .range(d3.schemeCategory10);
 
-        // Pie generators
-        const pie = d3.pie<any>()
-            .value(d => d.isotopic_composition || d.abundance)
-            .sort(null);
+        const isotopeColor = d3.scaleOrdinal<string>()
+          .domain(validIsotopes.map((iso: Isotope) => iso.nucleus))
+          .range(d3.schemeDark2);
 
-        // Inner ring (isotopes)
-        const innerArc = d3.arc()
-                           .innerRadius(radius * 0.3)
-                           .outerRadius(radius * 0.6);
+        const spinArcs = svg.selectAll<SVGGElement, unknown>(".spin-arc")
+          .data(spinPie(spinGroups as [string, GroupedIsotopes][]))
+          .enter().append("g")
+          .attr("class", "spin-arc");
 
-        // Outer ring (spin groups)
-        const outerArc = d3.arc()
-                           .innerRadius(radius * 0.65)
-                           .outerRadius(radius * 0.9);
+        spinArcs.append("path")
+          .attr("d", (d) => outerArc(d))
+          .attr("fill", (d: d3.PieArcDatum<[string, GroupedIsotopes]>) => spinColor(d.data[0]));
 
-        // Outer ring (spin groups)
-        chartGroup.selectAll(".spin-arc")
-                  .data(spinArcs)
-                  .enter().append("path")
-                  .attr("d", outerArc)
-                  .attr("fill", d => spinColor(d.data[0]));
+        spinArcs.append("text")
+          .attr("transform", (d: d3.PieArcDatum<[string, GroupedIsotopes]>) => `translate(${outerArc.centroid(d)})`)
+          .attr("dy", "0.35em")
+          .text((d: d3.PieArcDatum<[string, GroupedIsotopes]>) => `${d.data[0]} (${(d.data[1].total * 100).toFixed(1)}%)`);
 
-        // Inner isotope ring
-        chartGroup.selectAll(".isotope-arc")
-                  .data(isotopeArcs)
-                  .enter().append("path")
-                  .attr("d", innerArc)
-                  .attr("fill", d => isotopeColor(d.data.nucleus));
+        const isotopeArcs = spinArcs.selectAll<SVGGElement, d3.PieArcDatum<InnerArcDatumData>>(".isotope-arc")
+          .data((d: d3.PieArcDatum<[string, GroupedIsotopes]>) => isotopePie(d.data[1].isotopes.map(iso => ({ ...iso, parent: d }))))
+          .enter().append("g")
+          .attr("class", "isotope-arc");
 
-        // Add labels with proper data access
-        chartGroup.selectAll(".spin-label")
-                  .data(spinArcs)
-                  .enter().append("text")
-                  .attr("transform", d => `translate(${outerArc.centroid(d)})`)
-                  .text(d => `${d.data[0]} (${(d.data[1].total * 100).toFixed(1)}%)`)
-                  .style("font-size", "10px")
-                  .style("font-weight", "bold");
+        isotopeArcs.append("path")
+          .attr("d", (d) => innerArc(d))
+          .attr("fill", (d: d3.PieArcDatum<InnerArcDatumData>) => isotopeColor(d.data.nucleus));
 
-        // Add isotope labels (inner ring)
-        chartGroup.selectAll(".isotope-label")
-                  .data(isotopeArcs)
-                  .enter()
-                  .append("text")
-                  .attr("transform", d => `translate(${innerArc.centroid(d)})`)
-                  .attr("text-anchor", "middle")
-                  .text(d => d.data.mass_number)
-                  .style("font-size", "10px")
-                  .style("font-weight", "bold");
-
-        // Add element symbol at center
-        const symbol = chartGroup.append("text")
-                                 .attr("text-anchor", "middle")
-                                 .attr("dy", ".3em")
-                                 .style("font-size", "24px")
-                                 .style("font-weight", "bold")
-                                 .text(selected.symbol);
-
-        // Add atomic number at top-left of symbol
-        symbol.node()?.getBBox(); // Force layout calculation
-        chartGroup.append("text")
-                  .attr("x", -12)  // Small offset left from center
-                  .attr("y", -10)  // Small offset up from center
-                  .style("font-size", "14px")
-                  .style("text-anchor", "end")  // Right-align to position
-                  .text(selected.atomic_number);
+        isotopeArcs.append("text")
+          .attr("transform", (d: d3.PieArcDatum<InnerArcDatumData>) => `translate(${innerArc.centroid(d)})`)
+          .attr("dy", "0.35em")
+          .text((d: d3.PieArcDatum<InnerArcDatumData>) => d.data.mass_number.toString());
 
     }, [selected]);
 
     return (
         <Box>
-            <svg ref={svgRef} width={width} height={height}></svg>
+            <svg ref={ref} width={400} height={400}></svg>
         </Box>
     )
 }

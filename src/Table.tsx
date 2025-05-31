@@ -1,15 +1,15 @@
-import React from 'react';
+import * as React from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid2';
 import LinearProgress, { LinearProgressProps } from '@mui/material/LinearProgress';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 
+import { Isotope, Spin } from './Element';
 const PeriodicTableGrid = React.lazy(() => import('./PeriodicTableGrid'));
 // I expect the square to load instantly
 import ElementSquare from './ElementSquare';
 
 import useAppStore from './store';
-import { Spin } from './Element';
 
 const LinearProgressWithLabel = (props: LinearProgressProps & { value: number }): JSX.Element => {
   return (
@@ -33,11 +33,11 @@ const Table: React.FC = () => {
     { field: 'isotopic_composition',
       headerName: 'Isotopic Composition',
       width: 300,
-      renderCell: (params: GridRenderCellParams<any, number>) =>
+      renderCell: (params: GridRenderCellParams<Isotope, number>) =>
         <LinearProgressWithLabel value={ params.value ? params.value*100 : 0.0}></LinearProgressWithLabel>
     },
     { field: 'spin', headerName: 'Spin', width: 100,
-      renderCell: (params: GridRenderCellParams<any, Spin>) =>
+      renderCell: (params: GridRenderCellParams<Isotope, Spin>) =>
         <span>{ params.value ? params.value.label : "?" }</span>
     },
     { field: 'thalf', headerName: 'Half Life', width: 200 },
@@ -45,8 +45,8 @@ const Table: React.FC = () => {
 
   return(
     <Grid container spacing={3} direction='row' columns={2}>
-      <Grid container spacing={3} columns={2} sx={{ padding: "3rem" }}>
-        <Grid container spacing={3} sx={{ width: "100%", padding: "3.5rem" }}>
+      <Grid container spacing={1} columns={2} sx={{ padding: "1rem" }}>
+        <Grid container spacing={3} sx={{ width: "100%", padding: "1rem" }}>
           <Grid size="grow">
             <ElementSquare selected={selected}></ElementSquare>
           </Grid>

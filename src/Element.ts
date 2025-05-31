@@ -74,7 +74,7 @@ export class Spin {
 // with an expected Spin into the dataset
 // This search shouldn't fail, but could fail;
 // that's why we keep the spin fields optional.
-interface Isotope {
+export interface Isotope {
   id: number,
   mass_number: number,
   isotopic_composition: number,
