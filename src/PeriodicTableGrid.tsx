@@ -8,31 +8,21 @@ import useAppStore from './store.ts';
 const group_01_symbols: string[] = ["H", "Li", "Na", "K", "Rb", "Cs", "Fr"];
 const group_02_symbols: string[] = ["Be", "Mg", "Ca", "Sr", "Ba", "Ra"];
 const group_03_symbols: string[] = ["Sc", "Y"];
-const group_04_symbols: string[] = ["Ti", "Zr", "Hf", "Rf"];
-const group_05_symbols: string[] = ["V", "Nb", "Ta", "Db"];
-const group_06_symbols: string[] = ["Cr", "Mo", "W", "Sg"];
-const group_07_symbols: string[] = ["Mn", "Tc", "Re", "Bh"];
-const group_08_symbols: string[] = ["Fe", "Ru", "Os", "Hs"];
-const group_09_symbols: string[] = ["Co", "Rh", "Ir", "Mt"];
-const group_10_symbols: string[] = ["Ni", "Pd", "Pt", "Ds"];
-const group_11_symbols: string[] = ["Cu", "Ag", "Au", "Rg"];
-const group_12_symbols: string[] = ["Zn", "Cd", "Hg", "Cn"];
-const group_13_symbols: string[] = ["B", "Al", "Ga", "In", "Tl", "Nh"];
-const group_14_symbols: string[] = ["C", "Si", "Ge", "Sn", "Pb", "Fl"];
-const group_15_symbols: string[] = ["N", "P", "As", "Sb", "Bi", "Mc"];
-const group_16_symbols: string[] = ["O", "S", "Se", "Te", "Po", "Lv"];
-const group_17_symbols: string[] = ["F", "Cl", "Br", "I", "At", "Ts"];
-const group_18_symbols: string[] = ["He", "Ne", "Ar", "Kr", "Xe", "Rn", "Og"];
-
-const lanthanides_symbols: string[] =
-  ["La", "Ce", "Pr", "Nd", "Pm", "Sm",
-   "Eu", "Gd", "Tb", "Dy", "Ho", "Er",
-   "Tm", "Yb", "Lu"];
-
-const actinides_symbols: string[] =
-  ["Ac", "Th", "Pa", "U", "Np", "Pu",
-   "Am", "Cm", "Bk", "Cf", "Es", "Fm",
-   "Md", "No", "Lr"];
+const group_04_symbols: string[] = ["Ti", "Zr", "Hf", "Rf", "La", "Ac"];
+const group_05_symbols: string[] = ["V", "Nb", "Ta", "Db", "Ce", "Th"];
+const group_06_symbols: string[] = ["Cr", "Mo", "W", "Sg", "Pr", "Pa"];
+const group_07_symbols: string[] = ["Mn", "Tc", "Re", "Bh", "Nd", "U"];
+const group_08_symbols: string[] = ["Fe", "Ru", "Os", "Hs", "Pm", "Np"];
+const group_09_symbols: string[] = ["Co", "Rh", "Ir", "Mt", "Sm", "Pu"];
+const group_10_symbols: string[] = ["Ni", "Pd", "Pt", "Ds", "Eu", "Am"];
+const group_11_symbols: string[] = ["Cu", "Ag", "Au", "Rg", "Gd", "Cm"];
+const group_12_symbols: string[] = ["Zn", "Cd", "Hg", "Cn", "Tb", "Bk"];
+const group_13_symbols: string[] = ["B", "Al", "Ga", "In", "Tl", "Nh", "Dy", "Cf"];
+const group_14_symbols: string[] = ["C", "Si", "Ge", "Sn", "Pb", "Fl", "Ho", "Es"];
+const group_15_symbols: string[] = ["N", "P", "As", "Sb", "Bi", "Mc", "Er", "Fm"];
+const group_16_symbols: string[] = ["O", "S", "Se", "Te", "Po", "Lv", "Tm", "Md"];
+const group_17_symbols: string[] = ["F", "Cl", "Br", "I", "At", "Ts", "Yb", "No"];
+const group_18_symbols: string[] = ["He", "Ne", "Ar", "Kr", "Xe", "Rn", "Og", "Lu", "Lr"];
 
 interface ElementButtonProps {
   symbol: string
@@ -63,7 +53,13 @@ function ElementButton({ symbol, invisible, xs = 1, sm = 1 } : ElementButtonProp
   })
 
   return(
-    <Grid xs={xs} sm={sm} sx={{visibility: (invisible) ? "hidden" : "inherit" }}>
+    <Grid
+      sx={{
+        visibility: (invisible) ? "hidden" : "inherit",
+        flexBasis: { xs: `${(xs / 12) * 100}%`, sm: `${(sm / 12) * 100}%` },
+        maxWidth: { xs: `${(xs / 12) * 100}%`, sm: `${(sm / 12) * 100}%` },
+      }}
+    >
       <StyledButton
         size="small"
         color={(symbol==selected.symbol) ? 'primary': 'inherit'}
@@ -110,12 +106,6 @@ function PeriodicTableGrid() {
     .from(Array(3).keys())
     .map((_, idx) => <ElementButton key={idx.toString()} invisible symbol={"."}></ElementButton>);
 
-  const lanthanides_buttons = lanthanides_symbols
-    .map(el => <ElementButton key={el} symbol={el} xs={2} sm={1}></ElementButton>);
-
-  const actinides_buttons = actinides_symbols
-    .map(el => <ElementButton key={el} symbol={el} xs={2} sm={1}></ElementButton>);
-
   // (Keys aren't actually mandatory in the following groups)
   return (
     <Box>
@@ -144,11 +134,9 @@ function PeriodicTableGrid() {
       <Grid container spacing={1} justifyContent="center">
         <Grid container direction='row' spacing={1}>
           {invisible_buttons}
-          {lanthanides_buttons}
         </Grid>
         <Grid container direction='row' spacing={1}>
           {invisible_buttons}
-          {actinides_buttons}
         </Grid>
       </Grid>
     </Box>

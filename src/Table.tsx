@@ -45,8 +45,8 @@ const Table: React.FC = () => {
 
   return(
     <Grid container spacing={3} direction='row' columns={2}>
-      <Grid container spacing={1} columns={2} sx={{ padding: "1rem" }}>
-        <Grid container spacing={3} sx={{ width: "100%", padding: "1rem" }}>
+      <Grid container spacing={1} columns={2} sx={{ padding: ".5rem" }}>
+        <Grid container spacing={3} sx={{ width: "100%", padding: ".5rem" }}>
           <Grid size="grow">
             <ElementSquare selected={selected}></ElementSquare>
           </Grid>
