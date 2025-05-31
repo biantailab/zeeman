@@ -37,9 +37,11 @@ const actinides_symbols: string[] =
 interface ElementButtonProps {
   symbol: string
   invisible?: boolean
+  xs?: number;
+  sm?: number;
 }
 
-function ElementButton({ symbol, invisible } : ElementButtonProps) {
+function ElementButton({ symbol, invisible, xs = 1, sm = 1 } : ElementButtonProps) {
   const { selected, selectElement } = useAppStore();
 
   const StyledButton = styled(Button)({
@@ -61,7 +63,7 @@ function ElementButton({ symbol, invisible } : ElementButtonProps) {
   })
 
   return(
-    <Grid size={1} sx={{visibility: (invisible) ? "hidden" : "inherit" }}>
+    <Grid xs={xs} sm={sm} sx={{visibility: (invisible) ? "hidden" : "inherit" }}>
       <StyledButton
         size="small"
         color={(symbol==selected.symbol) ? 'primary': 'inherit'}
@@ -95,7 +97,7 @@ function Group({ symbols, offset }: GroupProps) {
     .map(el => <ElementButton key={el} symbol={el}></ElementButton>);
 
   return(
-    <Grid container direction="column" spacing={1} columns={1}>
+    <Grid container direction="column" spacing={1}>
       {invisible_buttons}
       {buttons}
     </Grid>
@@ -109,15 +111,15 @@ function PeriodicTableGrid() {
     .map((_, idx) => <ElementButton key={idx.toString()} invisible symbol={"."}></ElementButton>);
 
   const lanthanides_buttons = lanthanides_symbols
-    .map(el => <ElementButton key={el} symbol={el}></ElementButton>);
+    .map(el => <ElementButton key={el} symbol={el} xs={2} sm={1}></ElementButton>);
 
   const actinides_buttons = actinides_symbols
-    .map(el => <ElementButton key={el} symbol={el}></ElementButton>);
+    .map(el => <ElementButton key={el} symbol={el} xs={2} sm={1}></ElementButton>);
 
   // (Keys aren't actually mandatory in the following groups)
   return (
     <Box>
-      <Grid container spacing={1} columns={18} justifyContent="center">
+      <Grid container spacing={1} columns={{ xs: 12, sm: 12, md: 18 }} justifyContent="center">
         <Group key="Group01" symbols={group_01_symbols}></Group>
         <Group key="Group02" symbols={group_02_symbols} offset={1}></Group>
         <Group key="Group03" symbols={group_03_symbols} offset={3}></Group>
@@ -139,12 +141,12 @@ function PeriodicTableGrid() {
       </Grid>
 
       <Box sx={{ height: ".5rem" }}></Box>
-      <Grid container spacing={1} columns={10} justifyContent="center">
-        <Grid container direction='row' spacing={1} columns={18}>
+      <Grid container spacing={1} justifyContent="center">
+        <Grid container direction='row' spacing={1}>
           {invisible_buttons}
           {lanthanides_buttons}
         </Grid>
-        <Grid container direction='row' spacing={1} columns={18}>
+        <Grid container direction='row' spacing={1}>
           {invisible_buttons}
           {actinides_buttons}
         </Grid>
